@@ -1,24 +1,38 @@
-\section{Experiment}
-
-
-
-
+\section{Experiments}
 \subsection{KITTI Depth Completion Benchmark}
 \label{sec:kitti-depth-compl}
+\begin{figure}
+\begin{tabular}{r|cc}
+  \label{table:kitti}
+  & RMSE (m) & MAE (m)\\\hline
+  Bilateral NN~\cite{} & 4.19 & 1.09\\
+  SGDU~\cite{} & 2.5 & 0.72\\
+  Fast Bilateral Solver~\cite{} & 1.98 & 0.65\\
+  TGVL~\cite{} & 4.85 & 0.59\\\hline
+  Closest Depth Pooling & 2.77 & 0.94\\
+  Nadaraya Watson~\cite{} & 2.99 & 0.74\\
+  ConvNet & 2.97 & 0.78\\
+  ConvNet + mask & 2.24 & 0.79\\
+  SparseConvNet~\cite{} & 1.82 & 0.58\\
+  Ma \& Karaman & 1.68 & 0.70\\
+  Ours 1 Layer & 2.77 & 0.83\\
+  Ours 2 Layers & 1.44 & 0.47\\
+  Ours 3 Layers & 1.37 & 0.46
+\end{tabular}
+
+\caption{Comparison with various methods on the KITTI Depth Completion benchmark. All resulsts except for SparseConvNet and Ma's are taken as reported from ~\cite{}. Our method outperforms all previous state-of-the-art depth only completion methods (Bottom) as well as those that use RGB images for guidance (Top).}
+\label{fig:kitti}
+\end{figure}
 
 The KITTI dataset provides raw LIDAR measurements in conjunction with high resolution RGB images of 22 video sequences of driving both in cities and on highways. Combining all video sequences gives 93k frames with semi-dense ground truth depth. However, these measurements are corrupted by noise and by motion of the vehicle during sampling, and image rectification artifacts. Additionally the raw LIDAR points are very sparse, accounting for around 4\% of the total number of pixels in the map. For both these reasons the raw KITTI dataset is not ideal for evaluating depth completion systems.\\
 
-The sparsity issue can be resolved by accumulating LIDAR measurements from nearby frames in the video sequences, and by using semi-global matching to reconstruct 3D points which are then projected into the depth map using the provided calibration matrices. This process introduces more errors due to occlusion and non-rigid movement across frames. Urhig \etall resolved these issues by automatically removing accumulated LIDAR points that deviate from the SGM points by too much. The result is the KITTI depth completion benchmark, the first large scale dataset for depth completion training and evaluation.\\
+The sparsity issue can be resolved by accumulating LIDAR measurements from nearby frames in the video sequences, and by using semi-global matching to reconstruct 3D points which are then projected into the depth map using the provided calibration matrices. This process introduces more errors due to occlusion and non-rigid movement across frames. Urhig \etal resolved these issues by automatically removing accumulated LIDAR points that deviate from the SGM points by too much. The result is the KITTI depth completion benchmark, the first large scale dataset for depth completion training and evaluation.\\
 
-Urhig \etal then evaluated their proposed Sparsity Invariant CNNs on this dataset as well as several other current methods for depth completion, some of which also utilize high resolution images to guide the upsampling. Table () shows the results they present along with our method and the results of the very deep Sparse-to-Dense network proposed by Ma \& Karaman. The Sparse-to-Dense network is fairly standard, using Resnet-18 as an encoder and up-projection blocks for a decoder. Similar architectures have been presented in other works for single shot depth prediction. Notably our method outperforms all of the existing methods by a wide margin, including those that use RGB images and those that use orders of magnitude more model parameters than our method.
-
+Urhig \etal then evaluated their proposed Sparsity Invariant CNNs on this dataset as well as several other current methods for depth completion, some of which also utilize high resolution images to guide the upsampling. Table (\ref{table:kitti}) shows the results they present along with our method and the results of the very deep Sparse-to-Dense network proposed by Ma \& Karaman. The Sparse-to-Dense network is fairly standard, using Resnet-18 as an encoder and up-projection blocks for a decoder. Similar architectures have been presented in other works for single shot depth prediction. Notably our method outperforms all of the existing methods by a wide margin, including those that use RGB images and those that use orders of magnitude more model parameters than our method.
 \subsection{Effect of Training Data}
 \label{sec:effect-training-data}
-
 Modern deep learning models typically have tens of thousands to millions of parameters and therefore require enormous training sets to achieve good performance. This state of affairs motivated the creation of the KITTI depth completion dataset since previous benchmarks had only hundreds of examples. In this section we investigate the dependence on the amount of training data on the performance of our method in comparison with a standard deep network and the sparsity invariant variety.\\
-
 Figure () shows the results of evaluating these models on the 1k manually selected validation depth maps after training on varying subsets of the 86k training maps. Our method outperforms both baselines for all training sizes. As expected Ma \& Karaman's method fails to generalize well when trained on a small dataset since the model has ~3.4M parameters but performs well once trained on the full dataset. It is interesting to observe that the method of Urhig \etal does not gain any performance from training on more data. Our method is able to perform comparably to the sparsity invariant network with only 100 training examples but does increase in performance when given more data, validating the need for learning layered sparse coding dictionaries from large training sets.
-
 \subsection{Effect of Iterative Optimization}
 \label{sec:effect-iter-optim}
 
