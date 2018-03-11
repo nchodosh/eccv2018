@@ -7,7 +7,9 @@
 \usepackage{ruler}
 \usepackage{color}
 \usepackage{enumitem}
+\usepackage[ruled,vlined]{algorithm2e}
 \usepackage[width=122mm,left=12mm,paperwidth=146mm,height=193mm,top=12mm,paperheight=217mm]{geometry}
+\DeclareMathOperator*{\argmin}{\arg\!\min\,}
 \begin{document}
 % \renewcommand\thelinenumber{\color[rgb]{0.2,0.5,0.8}\normalfont\sffamily\scriptsize\arabic{linenumber}\color[rgb]{0,0,0}}
 % \renewcommand\makeLineNumber {\hss\thelinenumber\ \hspace{6mm} \rlap{\hskip\textwidth\ \hspace{6.5mm}\thelinenumber}}
@@ -43,7 +45,7 @@ the abstract section}
 
 % \input{Introduction.tex}
 \input{Introduction-nate.tex}
-%\input{Approach.tex}
+\input{Approach.tex}
 \input{Experiment.tex}
 
 \end{document}
