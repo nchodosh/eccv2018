@@ -1,0 +1,23 @@
+\section{Related Work}
+\label{sec:related-work}
+
+Since our proposed method is a fusion of deep learning and compressed sensing, we will review in this section previous work that has used either technique for depth estimation.
+
+\subsection{Compressed Sensing}
+\label{sec:compressed-sensing}
+
+% Hawe et al - Single layer wavelet dictionaries for dense disparty maps
+% L.-K.Liu et al - More complicated hand crafted dictionaries
+% Ma \& Karaman - Use indoor planar assumptions for recovery
+
+Compressed sensing is a technique in signal processing for recovering signals from a small set of measurements. Naturally it has been applied to depth completion in previous work, but has been limited to single-level hand-crafted dictionaries. The earliest is Hawe \etal, who show that disparity maps can be represented sparsely using the wavelet basis. L.-K. Liu \etal built on that by combining wavelets with contourlets and investigated the effect of different sampling patterns. Both ~\cite{} and ~\cite{} were out performed by Ma \& Karaman who exploit the simple structures of man-made indoor scenes to achieve full depth reconstruction. In contrast to all of these works, our approach learns multi-level convolutional dictionaries from a large dataset of incomplete ground truth depth maps.
+
+\subsection{Deep Learning}
+\label{sec:depth-upsampling}
+% Eigen et al - first to use deep learning for rgb to depth 
+% F. Liu et al - Fuse deep network with CRF
+% Lania \etal - Introduced up projection blocks for rgb to depth
+% Ma \& Karaman - Very deep network for depth prediction
+% SparseCNN - Similar to ours in that it explicitly handles sparsity
+
+Depth estimation using deep learning has largely been restricted to single-shot, RGB to depth prediction. This line of inquiry started with Eigen \etal who showed that a deep network could reasonably estimate depth using only an RGB image. Many variants of this method have since been explored, such ash F. Liu \etal who fused a CNN with a CRF model for reconstructing fine detail. Lania \etal introduced up-projection blocks which allowed for very deep networks and several other works have proposed variants of their architecture ~\cite{}. The most relevant of these variants is the Sparse-to-Dense network of Ma \& Karaman, which also examines depth completion from LiDAR points. Urhig \etal introduced the KITTI depth completion dataset, and showed that CNNs which explicitly encode the sparsity of the input achieve much better performance. Riegler \etal designed ATGV-Net, a deep network for depth map super resolution, but they assume a rectangular grid of inputs so it is not applicable to LiDAR completion. We will use the methods of Ma \& Karaman and Urhig \etal as our baseline comparisons since they represent the state-of-the-art in LiDAR depth completion.
