@@ -6,7 +6,9 @@
 We implemented three variants of algorithm (\ref{alg:dcsc}) for the cases $\ell = 1,2,3$. For the single layer case we let $W^T_1$ be a 11x11 convolution with striding of 2 and 8 filters. For $\ell = 2$ we let $W^T_{1}$ be an 11x11 convolution with 8 filters and $W^T_{1}$ be a 7x7 convolution with 16 filters. Finally for the $\ell = 3$ case: $W^T_{1}$ is an 11x11 convolution with 8 filters, $W^T_{2}$ is a 7x7 convolution with 16 filters, and $W^T_{3}$ is a 5x5 convolution with 32 filters. For both $\ell = 2$ and $\ell = 3$, all convolutions have striding of 2. For the single layer case we learned the dictionaries with the number of iterations set to 5 and then at test time increased the number of iterations to 20. For the two and three layer cases the number of iterations was fixed at train and test time to 10 except in section \ref{sec:effect-iter-optim} where the number of test and training iterations is varied. All training was done with the ADAM optimizer with the default parameters.
 \subsection{KITTI Depth Completion Benchmark}
 \label{sec:kitti-depth-compl}
-\begin{figure}
+% \begin{figure}
+\begin{table}
+\centering
 \begin{tabular}{r|cc}
   \label{table:kitti}
   & RMSE (m) & MAE (m)\\\hline
@@ -22,12 +24,16 @@ We implemented three variants of algorithm (\ref{alg:dcsc}) for the cases $\ell 
   Ma \& Karaman & 1.68 & 0.70\\\hline
   Ours 1 Layer & 2.77 & 0.83\\
   Ours 2 Layers & 1.44 & 0.47\\
-  Ours 3 Layers & \textbf{1.37} & \textbf{0.46}
-\end{tabular}
-
-\caption{Validation error of various methods on the KITTI Depth Completion benchmark. All resulsts except for SparseConvNet and Ma's are taken as reported from ~\cite{}. Our method outperforms all previous state-of-the-art depth only completion methods (Middle) as well as those that use RGB images for guidance (Top).}
+  Ours 3 Layers & \textbf{1.37} & \textbf{0.46}\\
+  \hline
+ \end{tabular}
+ \caption{Validation error of various methods on the KITTI Depth Completion benchmark. All resulsts except for SparseConvNet and Ma's are taken as reported from ~\cite{}. Our method outperforms all previous state-of-the-art depth only completion methods (Middle) as well as those that use RGB images for guidance (Top).}
 \label{fig:kitti}
-\end{figure}
+\end{table}
+
+
+
+% \end{figure}
 
 The KITTI dataset provides raw LIDAR measurements in conjunction with high resolution RGB images from 22 video sequences of driving in both cities and highways. Combining all video sequences gives 93k frames with semi-dense ground truth depth. However, these measurements are corrupted by noise, motion of the vehicle during sampling, and image rectification artifacts. Additionally the raw LIDAR points are very sparse, accounting for only 4\% of the total number of pixels in the map. For these reasons the raw KITTI dataset is not ideal for evaluating depth completion systems.\\
 
@@ -37,6 +43,7 @@ Urhig \etal then evaluated their proposed Sparsity Invariant CNNs on this datase
 \subsection{Effect of Amount of Training Data}
 \label{sec:effect-training-data}
 \begin{figure}
+\centering
 \includegraphics[width=0.45\textwidth]{trainsizeplot}
   \caption{Results of selected methods for varying training set sizes.}
   \label{fig:trainsize}
@@ -46,6 +53,7 @@ Figure (\ref{fig:trainsize}) shows the results of evaluating these models on the
 \subsection{Effect of Iterative Optimization}
 \label{sec:effect-iter-optim}
 \begin{figure}
+  \centering
   \includegraphics[width=0.45\textwidth]{iterplot}
   \caption{Results on the depth completion benchmark for different numbers of ADMM iterations. The total error is shown in blue while the red line shows the error on just those points given as input. The dotted lines show the same metrics but for the SparseConvNet of Urhig \etal}
   \label{fig:iterplot}
