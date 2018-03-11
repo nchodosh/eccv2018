@@ -9,22 +9,22 @@ We implemented three variants of algorithm (\ref{alg:dcsc}) for the cases $\ell 
 % \begin{figure}
 \begin{table}
 \centering
-\begin{tabular}{r|cc}
+\begin{tabular}{r|cccccc}
   \label{table:kitti}
-  & RMSE (m) & MAE (m)\\\hline
-  Bilateral NN~\cite{} & 4.19 & 1.09\\
-  SGDU~\cite{} & 2.5 & 0.72\\
-  Fast Bilateral Solver~\cite{} & 1.98 & 0.65\\
-  TGVL~\cite{} & 4.85 & 0.59\\\hline
-  Closest Depth Pooling & 2.77 & 0.94\\
-  Nadaraya Watson~\cite{} & 2.99 & 0.74\\
-  ConvNet & 2.97 & 0.78\\
-  ConvNet + mask & 2.24 & 0.79\\
-  SparseConvNet~\cite{} & 1.82 & 0.58\\
-  Ma \& Karaman & 1.68 & 0.70\\\hline
+  & RMSE (m) & MAE (m) & MRE & $\delta_1$ & $\delta_2$ & $\delta_3$\\\hline
+  Bilateral NN~\cite{} & 4.19 & 1.09 & - & - & - & -\\
+  SGDU~\cite{} & 2.5 & 0.72 & - & - & - & -\\
+  Fast Bilateral Solver~\cite{} & 1.98 & 0.65 & - & - & - & -\\
+  TGVL~\cite{} & 4.85 & 0.59 & - & - & - & -\\\hline
+  Closest Depth Pooling & 2.77 & 0.94 & - & - & - & -\\
+  Nadaraya Watson~\cite{} & 2.99 & 0.74 & - & - & - & -\\
+  ConvNet & 2.97 & 0.78 & - & - & - & -\\
+  ConvNet + mask & 2.24 & 0.79 & - & - & - & -\\
+  SparseConvNet~\cite{} & 1.82 & 0.58 & 0.035 & 0.98 & 0.99 & 1.0\\
+  Ma \& Karaman & 1.68 & 0.70 & 0.039 & 0.98 & 1.0 & 1.0\\\hline
   Ours 1 Layer & 2.77 & 0.83\\
-  Ours 2 Layers & 1.44 & 0.47\\
-  Ours 3 Layers & \textbf{1.35} & \textbf{0.43}\\
+  Ours 2 Layers & 1.45 & 0.47 & 0.028 & 0.98 & 1.0 & 1.0\\
+  Ours 3 Layers & \textbf{1.35} & \textbf{0.43} & \textbf{0.024} & \textbf{0.99} & 1.0 & 1.0\\
   \hline
  \end{tabular}
  \caption{Validation error of various methods on the KITTI Depth Completion benchmark. All resulsts except for SparseConvNet and Ma's are taken as reported from ~\cite{}. Our method outperforms all previous state-of-the-art depth only completion methods (Middle) as well as those that use RGB images for guidance (Top).}

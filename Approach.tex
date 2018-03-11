@@ -110,4 +110,8 @@ We can interpret the entire pipeline as a deep recurrent autoencoder with  $f^{[
   \label{eq:9}
   \min_{W_i, b_i} \sum_j^{N}\left||M_{j}d_j - M_jd^{*}\right||
 \end{equation}
-Where $M_jd_j$ is the sparse ground truth depth map of the $j$th training example.
+Where $M_jd_j$ is the sparse ground truth depth map of the $j$th training example. In practice we found that due to the sparsity of the training data, the depth maps our method predicted were rather noisy. To fix this issue we included the well known anisotropic total variation loss when training. Note that this change has no significant impact on the quantitative error metrics, but produces more visually pleasing outputs. The total loss is then given by:
+\begin{equation}
+  \label{eq:9}
+  \min_{W_i, b_i} \sum_j^{N}\left||M_{j}d_j - M_jd_j^{*}\right|| + \alpha\sum_{x,y} |d_j^*(x+1, y) - d_j^*(x, y)| + |d_j^*(x, y+1) - d_j^*(x, y)|
+\end{equation}
