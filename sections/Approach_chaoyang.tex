@@ -47,26 +47,36 @@ Before applying ADNNs to depth completion we will review how sparse coding is us
 
 Directly applying compressed sensing to the DeepCA objective gives
 \begin{equation}
-  \min_{\{\z_i\}} \frac{1}{2} \left\Vert \d_s - \M\W_1\z_1 \right\Vert^2  +  \sum_{i=2}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \sum_{i=1}^{\ell}\Phi_i(z_i)  
+  \min_{\{\z_i\}} \frac{1}{2} \left\Vert \d_s - \M\W_1\z_1 \right\Vert_2^2  +  \sum_{i=2}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \sum_{i=1}^{\ell}\Phi_i(\z_i) 
+  \label{eq:dccs_no_mask}
 \end{equation}
 where $\d_s$ is the input sparse depth map. However, if we take the $\W_i$ to have a convolutional structure then an element $\z_1$ will not be recovered if its spatial support contains no valid depth samples. Thus, extracting the higher level codes is itself a missing data problem and can be written the same way. This gives the full Deep Convolutional Compressed Sensing objective:
 \begin{equation}
   \label{eq:dccs}
-  \min_{\Theta, \{z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\z_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
+  \min_{\{\z_i \vert i>0\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\z_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
 \end{equation}
-where $\z_0 = \d_s$, $\M_0$ is an identity matrix, $M_i$ is a mask which encodes which elements of $z_i$ had any valid inputs in their spatial support. In practice computing $M_i$ is done with a maxpooling operation with the same stride and kernel size as the convolution represented by $W_{i+1}^T$. We will now solve (\ref{eq:dccs}) using the ADMM algorithm.\\
+Here, to simplify notation, we merge the depth reconstruction cost (left term in Eq.~\ref{eq:dccs_no_mask}) and the reconstruction cost of the codes together, with $\z_0 = \d_s$ and $\M_0$ denotes the mask $\M$ used in (\ref{eq:dccs_no_mask}) . Each $\M_i$ is a mask encoding which elements of $\z_i$ had any valid inputs in their spatial support. In practice computing $\M_i$ is done with a maxpooling operation with the same stride and kernel size as the convolution represented by $\W_{i+1}^T$.\\
 
-By introducing auxiliary variables $y_i = z_i$ we can form the augmented Lagrangian of (\ref{eq:dccs}) as:
+We solve (\ref{eq:dccs}) using the ADMM algorithm, which introduces auxiliary variables $\y_i$ that we constrain to be equal to the codes $\z_i$ as below:
 \begin{equation}
-  L(z, y, \lambda) = \sum_{i=1}^{\ell} \frac{1}{2} \left|| M_{i-1}y_{i-1} - M_{i-1}W_iz_i\right||_2^2 + \Phi_i(y_i) + \lambda^T_i(z_i - y_i) + \frac{\rho}{2}\left||z_i - y_i\right||_2^2
+\begin{aligned}
+\min_{\{\y_i, \z_i \vert i>0\}} & \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i)\\
+\text{s.t.~~} & \z_i = \y_i
+\end{aligned}
+\label{eq:admm_obj}
 \end{equation}
-The ADMM algorithm then minimizes $L$ over each variable in turn, while keeping all others fixed. Following Murdock \etal we will incrementally update each layer instead of first solving for all $z_i$ followed by all $y_i$. They show this order leads to faster convergence. The ADMM updates for each variable are as follows:
+Here, we again refer the input sparse depht $\d_s$ as $\y_0$. With this, the augmented Lagrangian of (\ref{eq:admm_obj}) with dual variables $\bold{\lambda}$ and a quadratic penalty weight $\rho$ is:
+\begin{equation}
+  L_\rho(\z, \y, \mathbf{\lambda}) = \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i) + \mathbf{\lambda}^T_i(\z_i - \y_i) + \frac{\rho}{2}\left\Vert\z_i - \y_i\right\Vert_2^2
+\end{equation}
+The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while keeping all others fixed. Following Murdock \etal we will incrementally update each layer instead of first solving for all $\z_i$ followed by all $\y_i$. They show this order leads to faster convergence. The ADMM updates for each variable are as follows:
 \begin{enumerate}
 \item
+ At each iteration $t+1$, $\z_i$ is first updated by minimizing $L_\rho$ with 
   \begin{equation}
     \begin{aligned}
-      z^{[t+1]}_i &:= \argmin_{z_i} L(z_i, y^{[t+1]}_{i-1}, y^{[t]}_i, \lambda_i^{[t]})\\
-      &= (W_i^TM_{i-1}^TM_{i-1}W_i + \rho I)^{-1}(W_{i}^TM_{i-1}^TM_{i-1}Wy^{[t+1]}_{i-1} + \rho y^{[t]}_{i} - \lambda^{[t]})
+      \z^{[t+1]}_i &:= \argmin_{\z_i} L_\rho(\z_i, \y^{[t+1]}_{i-1}, \y^{[t]}_i, \mathbf{\lambda}_i^{[t]})\\
+      &= (\W_i^T\M_{i-1}^T\M_{i-1}\W_i + \rho I)^{-1}(W_{i}^TM_{i-1}^TM_{i-1}Wy^{[t+1]}_{i-1} + \rho y^{[t]}_{i} - \lambda^{[t]})
     \end{aligned}
     \label{eq:wupdate1}  
   \end{equation}
