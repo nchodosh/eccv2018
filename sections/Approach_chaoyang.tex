@@ -1,11 +1,35 @@
-\section{Method}
+\\
+\\
+\noindent\textbf{Notations.} We define our notations throughout as follows: lowercase boldface symbols (\eg~$\mathbf{x}$) denote vectors, uppercase boldface symbols (\eg~$\mathbf{W}$) denote matrices.
+ 
+\section{Prilimary}
+Compressed sensing concerns the problem of recovering a signal from a small set of measurements. In our case, we're interested in reconstructing the depth map $\d$ with full resolution from the sparse depth map $\d_s$ produced by LiDAR. To achieve this, certain prior knowledge of the signal is required. The most widely used prior assumption is that the signal can be reconstructed with a sparse linear combination of basis elements from an over-complete dictionary $\W$. This gives an optimization problem similar to sparse coding:
+% \begin{equation}
+%     \z^* = \argmin \Vert \z \Vert_0, ~~\text{s.t.}~\M \W \z = \d_s,
+% \end{equation}
+\begin{equation}
+    \min_{\z} \Vert \M\W\z - \d_s \Vert + \Phi(\z),
+    \label{eq:cs}
+\end{equation}
+where $\z$ is the code; $\W\z$ produce our reconstruction of the depth map; $\M$ is a binary matrix which is used to mask out the unmeasured signal, such that the equivalence constraint is only applied to the pixels which have been measured; and $\phi$ can be any regularizor \eg $L_1$ norm to encourage $\z$ to be sparse.
+The key question to apply CS in Eq.~\ref{eq:cs} to 
+\subsection{Dictionary structure}
+why 
+
+\subsection{Dictionary learning}
+
+\section{Deep Convolutional Compressed Sensing}
+
+
+ 
+% \section{Method}
 \subsection{Sparse Coding and Deep Component Analysis}
 \label{sec:compr-sens-deep}
 
 The field of compressed sensing (CS) provides a natural framework for recovering a signal from a small set of measurements. Compressed sensing is based on sparse coding which is formally concerned with solving the following problem. 
 \begin{equation}
   \label{eq:1}
-  x^* = \min \left||x\right||_0 s.t. Ax = b
+  \x^* = \min \left\Vert\x\right\Vert_0 \text{s.t.} \mathbf{A}\x = \mathbf{b}
 \end{equation}
 The key insight is that when the optimal $x$ is known to have only a few non-zero entries, then it is a unique minimum and can be recovered exactly even when $A$ is over-complete. This proves useful for compressed sensing since if the number of non-zero entries of $x^*$ is known to be $k$, then it effectively reduces the degrees of freedom of the problem to $2k$ (the entries and their indices). Therefore we may need as few as $2k$ elements of $b$ to fully constrain the solution of $x^{*}$.\\
 
@@ -22,15 +46,15 @@ Before applying ADNNs to depth completion we will review how sparse coding is us
 \label{sec:deep-compr-sens}
 
 Directly applying compressed sensing to the DeepCA objective gives
-\begin{equation*}
-  \min_{\Theta, \{z_i\}} \frac{1}{2} \left|| Md - MW_1z_1 \right||^2 + \Phi(z_1) \sum_{i=2}^{\ell} \frac{1}{2} \left|| z_{i-1} - W_iz_i\right||_2^2 + \Phi_i(z_i)  
-\end{equation*}
-where $d$ is the full depth map and $Md$ is the sparse input depth map. However, if we take the $W_i$ to have a convolutional structure then an element $z_1$ will not be recovered if its spatial support contains no valid depth samples. Thus, extracting the higher level codes is itself a missing data problem and can be written the same way. This gives the full Deep Convolutional Compressed Sensing objective:
+\begin{equation}
+  \min_{\{\z_i\}} \frac{1}{2} \left\Vert \d_s - \M\W_1\z_1 \right\Vert^2  +  \sum_{i=2}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \sum_{i=1}^{\ell}\Phi_i(z_i)  
+\end{equation}
+where $\d_s$ is the input sparse depth map. However, if we take the $\W_i$ to have a convolutional structure then an element $\z_1$ will not be recovered if its spatial support contains no valid depth samples. Thus, extracting the higher level codes is itself a missing data problem and can be written the same way. This gives the full Deep Convolutional Compressed Sensing objective:
 \begin{equation}
   \label{eq:dccs}
-  \min_{\Theta, \{z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left|| M_{i-1}z_{i-1} - M_{i-1}W_iz_i\right||_2^2 + \Phi_i(z_i)
+  \min_{\Theta, \{z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\z_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
 \end{equation}
-where $Md = M_0z_0$ and $M_i$ is a mask which encodes which elements of $z_i$ had any valid inputs in their spatial support. In practice computing $M_i$ is done with a maxpooling operation with the same stride and kernel size as the convolution represented by $W_{i+1}^T$. We will now solve (\ref{eq:dccs}) using the ADMM algorithm.\\
+where $\z_0 = \d_s$, $\M_0$ is an identity matrix, $M_i$ is a mask which encodes which elements of $z_i$ had any valid inputs in their spatial support. In practice computing $M_i$ is done with a maxpooling operation with the same stride and kernel size as the convolution represented by $W_{i+1}^T$. We will now solve (\ref{eq:dccs}) using the ADMM algorithm.\\
 
 By introducing auxiliary variables $y_i = z_i$ we can form the augmented Lagrangian of (\ref{eq:dccs}) as:
 \begin{equation}
