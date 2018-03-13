@@ -3,6 +3,7 @@
 \noindent\textbf{Notations.} We define our notations throughout as follows: lowercase boldface symbols (\eg~$\mathbf{x}$) denote vectors, uppercase boldface symbols (\eg~$\mathbf{W}$) denote matrices.
  
 \section{Prilimary}
+\subsection{Compressed scensing}
 Compressed sensing concerns the problem of recovering a signal from a small set of measurements. In our case, we're interested in reconstructing the depth map $\d$ with full resolution from the sparse depth map $\d_s$ produced by LiDAR. To achieve this, certain prior knowledge of the signal is required. The most widely used prior assumption is that the signal can be reconstructed with a sparse linear combination of basis elements from an over-complete dictionary $\W$. This gives an optimization problem similar to sparse coding:
 % \begin{equation}
 %     \z^* = \argmin \Vert \z \Vert_0, ~~\text{s.t.}~\M \W \z = \d_s,
@@ -13,16 +14,7 @@ Compressed sensing concerns the problem of recovering a signal from a small set 
 \end{equation}
 where $\z$ is the code; $\W\z$ produce our reconstruction of the depth map; $\M$ is a binary matrix which is used to mask out the unmeasured signal, such that the equivalence constraint is only applied to the pixels which have been measured; and $\phi$ can be any regularizor \eg $L_1$ norm to encourage $\z$ to be sparse.
 The key question to apply CS in Eq.~\ref{eq:cs} to 
-\subsection{Dictionary structure}
-why 
 
-\subsection{Dictionary learning}
-
-\section{Deep Convolutional Compressed Sensing}
-
-
- 
-% \section{Method}
 \subsection{Sparse Coding and Deep Component Analysis}
 \label{sec:compr-sens-deep}
 
@@ -40,9 +32,14 @@ Equation (\ref{eq:1}) can be generalized to multi-layered sparse coding in which
 \end{equation}
 where the $\Phi_j$ are the penalty functions. Previous work has shown that the specific choice of $\Phi(x) = I(x > 0) + b\left||x\right||_1$ yields optimization algorithms very similar to a feed-forward neural network with Relu activation functions. By using the ADMM algorithm to solve equation (\ref{eq:2}), Murdock \etal create Alternating Direction Neural Networks, a generalization of feed forward neural networks which internally solve optimization problems with the form of (\ref{eq:2}). Alternating Direction Neural Networks (ADNNs) perform the optimization in a fully differentiable manner and cast the activation functions of each layer as the proximal operators of penalty function $\Phi_i$ of that layer. This allows for learning the dictionaries $W_i$ through gradient descent and back propagation with respect to an arbitrary loss function on the sparse codes. To mirror neural networks, Murdock \etal apply various loss functions to the highest level of codes, which take the place of the output layer in traditional NNs. In the following sections we will show how ADNNs can be adapted to the depth completion problem.\\
 
+\section{Deep Convolutional Compressed Sensing}
+ 
+% \section{Method}
+
+
 Before applying ADNNs to depth completion we will review how sparse coding is used for compressed sensing. To this end, consider applying to $b$ a rectangular binary matrix $M$ such that $MM^T = I$ and each row contains all 0s except for a single 1. Intuitively, if $b$ is the signal we wish to recover then $Mb$ is the portion of $b$ we measure. Using the condition from equation (\ref{eq:1}) we have $MAx = Mb$. This combined with the sparsity of $x$ yields another sparse coding problem, now with the modified dictionary $MA$. It is known that if $x$ is sparse enough to be a unique encoding of $Mb$ with respect to $MA$, then it must also be the unique encoding of $b$ with respect to $A$ ~\cite{}. Thus once the sparse codes $x$ have been found the full signal can be recovered as $Ax$. We will now apply this formulation to DeepCA and then develop a modification to ADNNs to solve the new Deep Compressed Sensing problem.
 
-\subsection{Deep Compressed Sensing}
+\subsection{Inference}
 \label{sec:deep-compr-sens}
 
 Directly applying compressed sensing to the DeepCA objective gives
@@ -65,43 +62,44 @@ We solve (\ref{eq:dccs}) using the ADMM algorithm, which introduces auxiliary va
 \end{aligned}
 \label{eq:admm_obj}
 \end{equation}
-Here, we again refer the input sparse depht $\d_s$ as $\y_0$. With this, the augmented Lagrangian of (\ref{eq:admm_obj}) with dual variables $\bold{\lambda}$ and a quadratic penalty weight $\rho$ is:
+Here, we again refer the input sparse depht $\d_s$ as $\y_0$. With this, the augmented Lagrangian of (\ref{eq:admm_obj}) with dual variables $\bm{\lambda}$ and a quadratic penalty weight $\rho$ is:
 \begin{equation}
-  L_\rho(\z, \y, \mathbf{\lambda}) = \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i) + \mathbf{\lambda}^T_i(\z_i - \y_i) + \frac{\rho}{2}\left\Vert\z_i - \y_i\right\Vert_2^2
+  L_\rho(\z, \y, \bm{\lambda}) = \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i) + \bm{\lambda}^T_i(\z_i - \y_i) + \frac{\rho}{2}\left\Vert\z_i - \y_i\right\Vert_2^2
 \end{equation}
 The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while keeping all others fixed. Following Murdock \etal we will incrementally update each layer instead of first solving for all $\z_i$ followed by all $\y_i$. They show this order leads to faster convergence. The ADMM updates for each variable are as follows:
 \begin{enumerate}
 \item
- At each iteration $t+1$, $\z_i$ is first updated by minimizing $L_\rho$ with 
+ At each iteration $t+1$, $\z_i$ is first updated by minimizing $L_\rho$ with the associated auxiliary variable $\y_i$ from the previous iteration, and $\z_{i-1}$ from the current iteration fixed:
   \begin{equation}
     \begin{aligned}
-      \z^{[t+1]}_i &:= \argmin_{\z_i} L_\rho(\z_i, \y^{[t+1]}_{i-1}, \y^{[t]}_i, \mathbf{\lambda}_i^{[t]})\\
-      &= (\W_i^T\M_{i-1}^T\M_{i-1}\W_i + \rho I)^{-1}(W_{i}^TM_{i-1}^TM_{i-1}Wy^{[t+1]}_{i-1} + \rho y^{[t]}_{i} - \lambda^{[t]})
+      \z^{[t+1]}_i &:= \argmin_{\z_i} L_\rho(\z_i, \y^{[t+1]}_{i-1}, \y^{[t]}_i, \bm{\lambda}_i^{[t]})\\
+      &= (\W_i^T\M_{i-1}^T\M_{i-1}\W_i + \rho \I)^{-1}(\W_{i}^T\M_{i-1}^T\M_{i-1}\W\y^{[t+1]}_{i-1} + \rho \y^{[t]}_{i} - \bm{\lambda}^{[t]})
     \end{aligned}
     \label{eq:wupdate1}  
   \end{equation}
 
-  This gives a fully differentiable update of $z_i$ but the matrix inversion is computationally expensive, especially since $W_i$ is not formed explicitly. To deal with this problem we will make the approximation that $W_i$ is a Parseval tight frame, that is we will assume $W_iW_i^T = I$. In addition to being common practice in autoencoders with tied weights, this assumption is also made by Murdock \etal and has previously been explicitly enforced in deep neural networks~\cite{}. We can then use the binomial matrix identity to rewrite the $z_i$ update as:
+  This gives a fully differentiable update of $\z_i$ but the matrix inversion is computationally expensive, especially since $W_i$ is not formed explicitly. To deal with this problem we make the approximation that $\W_i$ is a Parseval tight frame~\cite{}, that is we assume $\W_i\W_i^T = I$. In addition to being common practice in autoencoders with tied weights, this assumption is also made by Murdock \etal and has previously been explicitly enforced in deep neural networks~\cite{}. We can then use the binomial matrix identity to rewrite the $\z_i$ update as:
   \begin{equation}
     \begin{aligned}
-      \tilde{y}_i^{[t]} &= y_i^{[t]} - \frac{1}{\rho}\\
-      z^{[t+1]} &= \tilde{y}_i^{[t]} + \frac{1}{1 + \rho}W^T_iM_{i-1}^T(M_{i-1}y^{[t+1]}_{i-1} - M_{i-1}W_i\tilde{y}^{[t]}_i)
+      \z^{[t+1]} &= \tilde{\y}_i^{[t]} + \frac{1}{1 + \rho}\W^T_i\M_{i-1}^T(\M_{i-1}\y^{[t+1]}_{i-1} - \M_{i-1}\W_i\tilde{\y}^{[t]}_i),
     \end{aligned}\label{eq:zupdate}
   \end{equation}
+  where $\tilde{\y}_i^{[t]} \triangleq \y_i^{[t]} - \frac{1}{\rho}$.
 \item
+ Similarly, the update rule for the auxiliary variables $\y_i$ is:
   \begin{equation}
     \begin{aligned}
-      y_i^{[t+1]} &:= \argmin_{y_i} L(z^{[t+1]}_i, z^{[t]}_{i+1}, y_i, \lambda_i^{[t]})\\
-      &= \phi_i\left(\frac{1}{1+\rho}W_{i+1}z^{[t]}_{i+1} + \frac{\rho}{1+\rho}(z^{[t+1]}_i + \frac{\lambda_i^{[t]}}{\rho})\right)\\
-      y_{\ell} &= \phi_i\left(z_i^{[t]} + \frac{\lambda_i^{[t]}}{\rho}\right)
+      \y_i^{[t+1]} & = \argmin_{\y_i} L_\rho(\z^{[t+1]}_i, \z^{[t]}_{i+1}, \y_i, \bm{\lambda}_i^{[t]})\\
+      &= \phi_i\left(\frac{1}{1+\rho}\W_{i+1}\z^{[t]}_{i+1} + \frac{\rho}{1+\rho}(\z^{[t+1]}_i + \frac{\bm{\lambda}_i^{[t]}}{\rho})\right)\\
+      \y_{\ell} &= \phi_i\left(\z_i^{[t]} + \frac{\bm{\lambda}_i^{[t]}}{\rho}\right)
     \end{aligned}\label{eq:yupdate}
   \end{equation}
 
-  Here $\phi_i$ is the proximal operator associated with the penalty function $\Phi_i$. For appropriate choices of $\Phi_i$, $\phi_i$ can be computed efficiently and differentiably. Specifically we will chose $\Phi_i(x) = I(x > 0) + b\left||x\right||_1$ so that $\phi_i(x) = Relu(x - \frac{b}{\rho})$, an operation that is implemented efficiently in machine learning frameworks.
-\item Finally the $\lambda_i$ updated with the standard ADMM formula:
+  Here $\phi_i$ is the proximal operator associated with the penalty function $\Phi_i$. For appropriate choices of $\Phi_i$, $\phi_i$ need to be computational efficien and differentiable. With this in mind, we choose $\Phi_i(\x) = I(\x > 0) + b\left\Vert\x\right\Vert_1$ so that $\phi_i(\x) = \text{ReLU}(\x - \frac{b}{\rho})$.
+\item Finally the dual variable $\bm{\lambda}_i$ is updated by:
   \begin{equation}
     \label{eq:lupdate}
-    \lambda_i^{[t+1]} = \lambda_i^{[t]} + \rho(z_i^{[t+1]} - y_i^{[t+1]})
+    \bm{\lambda}_i^{[t+1]} = \bm{\lambda}_i^{[t]} + \rho(\z_i^{[t+1]} - \y_i^{[t+1]})
   \end{equation}
 \end{enumerate}
 \begin{algorithm}
@@ -124,28 +122,43 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
   \label{alg:dcsc}
 \end{algorithm}
 
-The normal ADMM algorithm repeatedly applies these updates until convergence but for simplicity we will approximate this behavior by truncating it to a constant number of iterations $T$. The full procedure is detailed in algorithm (\ref{alg:dcsc}).
-
-\subsection{Dictionary Learning}
-\label{sec:dictionary-learning}
-
-Since all of the updates used in algorithm (\ref{alg:dcsc}) are simple differentiable operations, the entire algorithm can be thought of as a single differentiable function
-\begin{equation}
-  \label{eq:7}
-  \{ z_i \} = f^{[T]}_{DCSC}(Md, M; \Theta)
-\end{equation}
-The final predicted depth is then given by
+The full procedure is detailed in algorithm (\ref{alg:dcsc}).
+As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with CNN layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and got our optimized code $\z_\ell$ for the last layer.
+We can interpret the entire pipeline as a deep autoencoder with the ADMM iterations serving as a deep recurrent encoder network.
+With this, we produce our final depth map prediction by:
 \begin{equation}
   \label{eq:8}
-  d^{*} = W_1W_2\ldots W_{\ell}z_{\ell}
+  \d_\text{pred} = \W_1\W_2\ldots \W_{\ell}\z_{\ell}
 \end{equation}
-We can interpret the entire pipeline as a deep recurrent autoencoder with  $f^{[T]}_{DCSC}$ serving as the encoder and the $\ell$ convolutions $W_1W_2\ldots W_{\ell}$ serving as the decoder. It follows that the dictionaries can then be learned through stochastic gradient descent over a suitable loss function. Using the standard sum of squared loss error, dictionary learning is written as
+
+%The normal ADMM algorithm repeatedly applies these updates until convergence but for simplicity we will approximate this behavior by truncating it to a constant number of iterations $T$. 
+
+\subsection{Learning}
+\label{sec:dictionary-learning}
+
+With unrolling of the ADMM update by $T$ iterations as described above, the entire inference procedure can be thought of as a single differentiable function:
+\begin{equation}
+    \d_\text{pred} = f_\text{DCCS}^{[T]}(\M, \d_s; \{\W_i, b_i\})
+\end{equation}
+% \begin{equation}
+%   \label{eq:7}
+%   \{ z_i \} = f^{[T]}_{DCSC}(Md, M; \Theta)
+% \end{equation}
+Thus the dictionaries $\W_i$ and the bias term $b_i$ which are the parameters for $f_\text{DCCS}^{[T]}$ can be learned through  stochastic gradient descent over a suitable loss function. Using the standard sum of squared loss error, dictionary learning is formed as minimizing the depth reconstruction error $\L_\text{reconstruct}$:
 \begin{equation}
   \label{eq:9}
-  \min_{W_i, b_i} \sum_j^{N}\left||M_{j}d_j - M_jd^{*}\right||
+  \min_{\{\W_i, b_i\}} \sum_{n=1}^{N}\left\Vert \d_\text{gt}^{(n)} - \M'^{(n)}  \d_\text{pred}^{(n)})\right\Vert
 \end{equation}
-Where $M_jd_j$ is the sparse ground truth depth map of the $j$th training example. In practice we found that due to the sparsity of the training data, the depth maps our method predicted were rather noisy. To fix this issue we included the well known anisotropic total variation loss when training. Note that this change has no significant impact on the quantitative error metrics, but produces more visually pleasing outputs. The total loss is then given by:
+Where $\d_\text{gt}^{(n)}$ is the ground truth depth map of the $n_\textt{th}$ training example. We allow the ground truth depth map to have missing value by using mask $\M'^{(n)}$ to segment out the invalid pixels in the ground truth depth map. 
+
+In practice we found that due to the sparsity of the training data, the depth maps our method predicted were rather noisy. To fix this issue we included the well known anisotropic total variation loss (TV-L1) when training to encourage smoothness of the predicted depth map. Note that this change has no significant impact on the quantitative error metrics, but produces more visually pleasing outputs. The total loss is then given by summation of the depth reconstruction loss and the TV-L1 smoothness loss, with hyperparameter $\alpha$ to control the weighting for the smoothness penalty:
+
 \begin{equation}
   \label{eq:9}
-  \min_{W_i, b_i} \sum_j^{N}\left||M_{j}d_j - M_jd_j^{*}\right|| + \alpha\sum_{x,y} |d_j^*(x+1, y) - d_j^*(x, y)| + |d_j^*(x, y+1) - d_j^*(x, y)|
+  \L = \L_{reconstruct} + \alpha \L_\text{TV-L1}.
 \end{equation}
+
+% \begin{equation}
+%   \label{eq:9}
+%   \min_{W_i, b_i} \sum_j^{N}\left||M_{j}d_j - M_jd_j^{*}\right|| + \alpha\sum_{x,y} |d_j^*(x+1, y) - d_j^*(x, y)| + |d_j^*(x, y+1) - d_j^*(x, y)|
+% \end{equation}
