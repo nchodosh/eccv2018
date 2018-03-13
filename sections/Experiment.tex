@@ -3,7 +3,7 @@
 \subsection{Implementation Details}
 \label{sec:impl-deta}
 
-We implemented three variants of algorithm (\ref{alg:dcsc}) for the cases $\ell = 1,2,3$. For the single layer case we let $W^T_1$ be a 11x11 convolution with striding of 2 and 8 filters. For $\ell = 2$ we let $W^T_{1}$ be an 11x11 convolution with 8 filters and $W^T_{1}$ be a 7x7 convolution with 16 filters. Finally for the $\ell = 3$ case: $W^T_{1}$ is an 11x11 convolution with 8 filters, $W^T_{2}$ is a 5x5 convolution with 16 filters, and $W^T_{3}$ is a 3x3 convolution with 32 filters. For both $\ell = 2$ and $\ell = 3$, all convolutions have striding of 2. For the single layer case we learned the dictionaries with the number of iterations set to 5 and then at test time increased the number of iterations to 20. For the two and three layer cases the number of iterations was fixed at train and test time to 10 except in section \ref{sec:effect-iter-optim} where the number of test and training iterations is varied. All training was done with the ADAM optimizer with the default parameters.
+We implemented three variants of algorithm (\ref{alg:dcsc}) for the cases $\ell = 1,2,3$. For the single layer case we let $\W^T_1$ be a 11x11 convolution with striding of 2 and 8 filters. For $\ell = 2$ we let $\W^T_{1}$ be an 11x11 convolution with 8 filters and $W^T_{1}$ be a 7x7 convolution with 16 filters. Finally for the $\ell = 3$ case: $\W^T_{1}$ is an 11x11 convolution with 8 filters, $\W^T_{2}$ is a 5x5 convolution with 16 filters, and $\W^T_{3}$ is a 3x3 convolution with 32 filters. For both $\ell = 2$ and $\ell = 3$, all convolutions have striding of 2. For the single layer case we learned the dictionaries with the number of iterations set to 5 and then at test time increased the number of iterations to 20. For the two and three layer cases the number of iterations was fixed at train and test time to 10 except in section \ref{sec:effect-iter-optim} where the number of test and training iterations is varied. All training was done with the ADAM optimizer with the default parameters.
 
 \subsubsection{Error Metrics}
 \label{sec:error-metrics}
@@ -15,7 +15,7 @@ For evaluation on the KITTI benchmark we use the following error metrics:
 \item MRE: mean absolute relative error
 \item $\delta_i$: percent of predictions whose relative error is within a threshold. Formally:
   \begin{equation*}
-    \delta_i = \frac{\#\left\{\d^\text{pred}_i : \max\left\{\frac{\d^\text{pred}_i}{\d^\text{gt}_i}, \frac{\d^\text{gt}_i}{\d^\text{pred}_i}\right\} < 1.05^i\right\}}{N}
+    \delta_i = \frac{\#\left\{\d^{(n)}_\text{pred} : \max\left\{\frac{\d^{(n)}_\text{pred}}{\d^\text{gt}_i}, \frac{\d^\text{gt}_i}{\d^\text{pred}_i}\right\} < 1.05^i\right\}}{N}
   \end{equation*}
   where $\d^\text{pred}_i$ is the $i$th component of the predicted depth map, $\d^\text{gt}_i$ is similarly defined for the ground truth, and $N$ is the total number of ground truth samples.
 \end{itemize}
