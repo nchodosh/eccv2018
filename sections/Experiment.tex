@@ -58,28 +58,33 @@ Uhrig \etal then evaluated their proposed Sparsity Invariant CNNs on this datase
 
 \subsubsection{Varying Sparsity Levels}
 \label{sec:vary-spars-levels}
-\begin{figure}
+\begin{figure*}
   \centering
-  \includegraphics[width=0.45\textwidth]{sparsity_plot}
-  \caption{Results on the KITTI benchmark for varying levels of input sparsity. The keep probability represents the probability that any particular LiDAR sample is retained.}
-  \label{fig:sparsity}
-\end{figure}
+  \begin{minipage}{0.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{sparsity_plot}
+    \captionof{figure}{Results on the KITTI benchmark for varying levels of input sparsity. The keep probability represents the probability that any particular LiDAR sample is retained.}
+    \label{fig:sparsity}
+  \end{minipage}\hspace{1cm}
+  \begin{minipage}{0.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{trainsize_plot}
+    \caption{Results of selected methods for varying training set sizes.}
+    \label{fig:trainsize}
+  \end{minipage}
+\end{figure*}
+
 Uhrig \etal show that their Sparsity Invariant CNNs are very robust to a mismatch between the training and testing levels of sparsity. While we do not see a practical use for disparities as large as those tested in ~\cite{uhrig}, we do believe that depth completion systems should perform well under reasonable sparsity changes. To this end we adjusted the level of input sparsity in the KITTI benchmark by dropping input samples with probability $p$, for various values of $p$. The results of this experiment are shown in Figure (\ref{fig:sparsity}). While it is clear that our method does not achieve the level of sparsity invariance of the SparseConvNet, it still out performs both baseline results even when the only 80\% of the input samples are kept.
 \subsection{Effect of Amount of Training Data}
 \label{sec:effect-training-data}
-\begin{figure}
-\centering
-\includegraphics[width=0.45\textwidth]{trainsize_plot}
-  \caption{Results of selected methods for varying training set sizes.}
-  \label{fig:trainsize}
-\end{figure}
+
 Modern deep learning models typically have tens of thousands to millions of parameters and therefore require enormous training sets to achieve good performance. This is in fact the motivation for the KITTI depth completion dataset, since previous benchmarks did not have enough data to train deep networks. In this section we investigate the dependence on the amount of training data on the performance of our method in comparison with a standard deep network and the sparsity invariant variety.\\
 Figure (\ref{fig:trainsize}) shows the results of evaluating these models on the 1k manually selected validation depth maps after training on varying subsets of the 86k training maps. Our method outperforms both baselines for all training sizes. As expected Ma \& Karaman's method fails to generalize well when trained on a small dataset since the model has ~3.4M parameters but performs well once trained on the full dataset. It is interesting to observe that the method of Uhrig \etal does not gain any performance from training on more data. As a result it is ultimately out performed by the deep network which does not take sparsity into account. Our method is able to perform comparably to the sparsity invariant network with only 100 training examples but does increase in performance when given more data, validating the need for learning layered sparse coding dictionaries from large training sets. 
 \subsection{Effect of Iterative Optimization}
 \label{sec:effect-iter-optim}
 \begin{figure}
   \centering
-  \includegraphics[width=0.45\textwidth]{iter_plot}
+  \includegraphics[width=0.7\textwidth]{iter_plot}
   \caption{Results on the depth completion benchmark for different numbers of ADMM iterations. The total error is shown in blue while the red line shows the error on just those points given as input. The dotted lines show the same metrics but for the SparseConvNet of Uhrig \etal}
   \label{fig:iterplot}
 \end{figure}
