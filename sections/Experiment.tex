@@ -74,7 +74,7 @@ Uhrig \etal then evaluated their proposed Sparsity Invariant CNNs on this datase
   \end{minipage}
 \end{figure*}
 
-Uhrig \etal show that their Sparsity Invariant CNNs are very robust to a mismatch between the training and testing levels of sparsity. While we do not see a practical use for disparities as large as those tested in ~\cite{uhrig}, we do believe that depth completion systems should perform well under reasonable sparsity changes. To this end we adjusted the level of input sparsity in the KITTI benchmark by dropping input samples with probability $p$, for various values of $p$. The results of this experiment are shown in Figure (\ref{fig:sparsity}). While it is clear that our method does not achieve the level of sparsity invariance of the SparseConvNet, it still out performs both baseline results even when the only 80\% of the input samples are kept.
+Uhrig \etal show that their Sparsity Invariant CNNs are very robust to a mismatch between the training and testing levels of sparsity. While we do not see a practical use for disparities as large as those tested in ~\cite{uhrig}, we do believe that depth completion systems should perform well under reasonable sparsity changes. To this end we adjusted the level of input sparsity in the KITTI benchmark by dropping input samples with probability $p$, for various values of $p$. The results of this experiment are shown in Figure (\ref{fig:sparsity}). While it is clear that our method does not achieve the level of sparsity invariance of the SparseConvNet, it still out performs both baseline results even when the only 50\% of the input samples are kept.
 \subsection{Effect of Amount of Training Data}
 \label{sec:effect-training-data}
 
