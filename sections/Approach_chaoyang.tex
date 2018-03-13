@@ -125,9 +125,8 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
 \end{algorithm}
 
 The full procedure is detailed in algorithm (\ref{alg:dcsc}).
-As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with CNN layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and output our optimized code $\z_\ell$ for the last layer.
-We can interpret the entire pipeline as a deep autoencoder with the ADMM iterations serving as a deep recurrent encoder network.
-With this, we produce our final depth map prediction by:
+As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with CNeN layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and output our optimized code $\z_\ell$ for the last layer.
+We can the extract our prediction of the depth map by applying the effective dictionary to the high level code $z_{\ell}$ as shown in equation (\ref{eq:recon}). This is different from the standard decoder portion of a deep autoencoder, where the nonlinear activations are applied in between each convolution. Our approach does not require this since the internal optimization of $z_{\ell}$ ensures that the equality constraints between layers are met, which is not the case for conventional autoencoders.
 \begin{equation}
   \label{eq:recon}
   \d_\text{pred} = \W_1\W_2\ldots \W_{\ell}\z_{\ell}
