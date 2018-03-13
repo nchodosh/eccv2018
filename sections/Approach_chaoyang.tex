@@ -2,8 +2,8 @@
 \\
 \noindent\textbf{Notations.} We define our notations throughout as follows: lowercase boldface symbols (\eg~$\mathbf{x}$) denote vectors, uppercase boldface symbols (\eg~$\mathbf{W}$) denote matrices;
  
-\section{Prilimary}
-\subsection{Compressed scensing}
+\section{Preliminary}
+\subsection{Compressed sensing}
 Compressed sensing concerns the problem of recovering a signal from a small set of measurements. In our case, we're interested in reconstructing the depth map $\d$ with full resolution from the sparse depth map $\d_s$ produced by LiDAR. To achieve this, certain prior knowledge of the signal is required. The most widely used prior assumption is that the signal can be reconstructed with a sparse linear combination of basis elements from an over-complete dictionary $\W$. This gives an optimization problem similar to sparse coding:
 % \begin{equation}
 %     \z^* = \argmin \Vert \z \Vert_0, ~~\text{s.t.}~\M \W \z = \d_s,
@@ -12,9 +12,9 @@ Compressed sensing concerns the problem of recovering a signal from a small set 
     \min_{\z} \Vert \M\W\z - \d_s \Vert + \Phi(\z),
     \label{eq:cs}
 \end{equation}
-where $\z$ is the code; $\W\z$ produce our reconstruction of the depth map; $\M$ is a diagonal matrix with 0 and 1s on its diagnal. It's used to mask out the unmeasured signal, such that the reconstruction error is only applied to the pixels which have been measured; and $\Phi$ can be any regularizor \eg $L_1$ norm to encourage $\z$ to be sparse.
+where $\z$ is the code, $\W\z$ produces our predicted depth map, and $\M$ is a diagonal matrix with 0 and 1s on its diagpnal. It's used to mask out the unmeasured signal, such that the reconstruction error is only applied to the pixels which have been measured; and $\Phi$ can be any regularizer \eg $L_1$ norm to encourage $\z$ to be sparse.
 
-The key question to apply CS in Eq.~\ref{eq:cs} is: 1) For high dimensional signals such as the depth map, how to design the dictionary such that it encourages uniqueness of the code while still being computationally feasible; 2) How to learn the dictionary to get best reconstruction accuracy. In Sec.~\ref{sec:dccs}, we are going to show that the dictionary can be factorized with the identical structure as performing multi-layer convolution, and we can unrolled the optimization of  Eq.~\ref{eq:cs} as a deep recurrent network. This allows us to learn the dictionary together with other hyperparameters inside the regularizor $\Phi$ through end-to-end training.
+The key question to apply CS in Eq.~\ref{eq:cs} is: 1) For high dimensional signals such as the depth map, how to design the dictionary such that it encourages uniqueness of the code while still being computationally feasible; 2) How to learn the dictionary to get best reconstruction accuracy. In Sec.~\ref{sec:dccs}, we are going to show that the dictionary can be factorized with the identical structure as performing multi-layer convolution, and we can unrolled the optimization of  Eq.~\ref{eq:cs} as a deep recurrent network. This allows us to learn the dictionary together with other hyper-parameters inside the regularizer $\Phi$ through end-to-end training.
 
 \subsection{Deep Component Analysis}
 \label{sec:compr-sens-deep}
@@ -26,12 +26,12 @@ The key question to apply CS in Eq.~\ref{eq:cs} is: 1) For high dimensional sign
 % \end{equation}
 % The key insight is that when the optimal $x$ is known to have only a few non-zero entries, then it is a unique minimum and can be recovered exactly even when $A$ is over-complete. This proves useful for compressed sensing since if the number of non-zero entries of $x^*$ is known to be $k$, then it effectively reduces the degrees of freedom of the problem to $2k$ (the entries and their indices). Therefore we may need as few as $2k$ elements of $b$ to fully constrain the solution of $x^{*}$.\\
 
-Equation (\ref{eq:cs}) can be generalized to multi-layered sparse coding in which one seeks a very high level sparse representation $\z_{\ell}$ such that $\d = \W_1\W_2\ldots \W_{\ell}\z_{\ell}$ and each intermediate product $\z_i = \W_i\W_{i+1}\ldots \W_{\ell}\z_{\ell}$ is also sparse. This formulation makes using a large effective dictionary computationally tractable, and when the dictionaries have a convolutional structure it allows for increased receptive fields while keeping the number of parameters manageable. This is further generalized to Deep Component Analysis (DeepCA) by the recent work of Murdock \etal which replaces the $\ell_0$ loss with arbitrary sparsity-encouraging penalties. The DeepCA objective function is stated in ~\cite{} as:
+Equation (\ref{eq:cs}) can be generalized to multi-layered sparse coding in which one seeks a very high level sparse representation $\z_{\ell}$ such that $\d = \W_1\W_2\ldots \W_{\ell-1}\z_{\ell}$ and each intermediate product $\z_i = \W_i\W_{i+1}\ldots \W_{\ell-1}\z_{\ell}$ is also sparse. This formulation makes using a large effective dictionary computationally tractable, and when the dictionaries have a convolutional structure it allows for increased receptive fields while keeping the number of parameters manageable. This is further generalized to Deep Component Analysis (DeepCA) by the recent work of Murdock \etal which replaces the $\ell_0$ loss with arbitrary sparsity-encouraging penalties. The DeepCA objective function is stated in \cite{murdock} as:
 \begin{equation}
   \label{eq:2}
   \min_{\Theta, \{\z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
 \end{equation}
-where the $\Phi_j$ are sparsity regularizor. Previous work has shown that the specific choice of $\Phi(\x) = I(\x > 0) + b\left\Vert x\right\Vert_1$ yields optimization algorithms very similar to a feed-forward neural network with Relu activation functions. By using the ADMM algorithm to solve equation (\ref{eq:2}), Murdock \etal create Alternating Direction Neural Networks, a generalization of feed forward neural networks which internally solve optimization problems with the form of (\ref{eq:2}). Alternating Direction Neural Networks (ADNNs) perform the optimization in a fully differentiable manner and cast the activation functions of each layer as the proximal operators of penalty function $\Phi_i$ of that layer. This allows for learning the dictionaries $W_i$ through gradient descent and back propagation with respect to an arbitrary loss function on the sparse codes. To mirror neural networks, Murdock \etal apply various loss functions to the highest level of codes, which take the place of the output layer in traditional NNs. In the following sections we will show how ADNNs can be adapted to the depth completion problem within the framework of compressed sensing.\\
+where the $\Phi_j$ are sparsity regularizer. Previous work has shown that the specific choice of $\Phi(\x) = I(\x > 0) + b\left\Vert x\right\Vert_1$ yields optimization algorithms very similar to a feed-forward neural network with Relu activation functions. By using the ADMM algorithm to solve equation (\ref{eq:2}), Murdock \etal create Alternating Direction Neural Networks, a generalization of feed forward neural networks which internally solve optimization problems with the form of (\ref{eq:2}). Alternating Direction Neural Networks (ADNNs) perform the optimization in a fully differentiable manner and cast the activation functions of each layer as the proximal operators of penalty function $\Phi_i$ of that layer. This allows for learning the dictionaries $W_i$ and parameters $b$ through gradient descent and back propagation with respect to an arbitrary loss function on the sparse codes. To mirror neural networks, Murdock \etal apply various loss functions to the highest level of codes, which take the place of the output layer in traditional NNs. In the following sections we will show how ADNNs can be adapted to the depth completion problem within the framework of compressed sensing.\\
 
 \section{Deep Convolutional Compressed Sensing}
 \label{sec:dccs}
@@ -63,7 +63,7 @@ We solve (\ref{eq:dccs}) using the ADMM algorithm, which introduces auxiliary va
 \end{aligned}
 \label{eq:admm_obj}
 \end{equation}
-Here, we again refer the input sparse depht $\d_s$ as $\y_0$. With this, the augmented Lagrangian of (\ref{eq:admm_obj}) with dual variables $\bm{\lambda}$ and a quadratic penalty weight $\rho$ is:
+Here, we again refer the input sparse depth $\d_s$ as $\y_0$. With this, the augmented Lagrangian of (\ref{eq:admm_obj}) with dual variables $\bm{\lambda}$ and a quadratic penalty weight $\rho$ is:
 \begin{equation}
   L_\rho(\z, \y, \bm{\lambda}) = \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i) + \bm{\lambda}^T_i(\z_i - \y_i) + \frac{\rho}{2}\left\Vert\z_i - \y_i\right\Vert_2^2
 \end{equation}
@@ -79,7 +79,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
     \label{eq:wupdate1}  
   \end{equation}
 
-  This gives a fully differentiable update of $\z_i$ but the matrix inversion is computationally expensive, especially since $W_i$ is not formed explicitly. To deal with this problem we make the approximation that $\W_i$ is a Parseval tight frame~\cite{}, that is we assume $\W_i\W_i^T = I$. In addition to being common practice in autoencoders with tied weights, this assumption is also made by Murdock \etal and has previously been explicitly enforced in deep neural networks~\cite{}. We can then use the binomial matrix identity to rewrite the $\z_i$ update as:
+  This gives a fully differentiable update of $\z_i$ but the matrix inversion is computationally expensive, especially since $W_i$ is not formed explicitly. To deal with this problem we make the approximation that $\W_i$ is a Parseval tight frame~\cite{murdock}, that is we assume $\W_i\W_i^T = I$. In addition to being common practice in autoencoders with tied weights, this assumption is also made by Murdock \etal and has previously been explicitly enforced in deep neural networks~\cite{moustapha}. We can then use the binomial matrix identity to rewrite the $\z_i$ update as:
   \begin{equation}
     \begin{aligned}
       \z^{[t+1]} &= \tilde{\y}_i^{[t]} + \frac{1}{1 + \rho}\W^T_i\M_{i-1}^T(\M_{i-1}\y^{[t+1]}_{i-1} - \M_{i-1}\W_i\tilde{\y}^{[t]}_i),
@@ -96,7 +96,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
     \end{aligned}\label{eq:yupdate}
   \end{equation}
 
-  Here $\phi_i$ is the proximal operator associated with the penalty function $\Phi_i$. For appropriate choices of $\Phi_i$, $\phi_i$ need to be computational efficien and differentiable. With this in mind, we choose $\Phi_i(\x) = I(\x > 0) + b\left\Vert\x\right\Vert_1$ so that $\phi_i(\x) = \text{ReLU}(\x - \frac{b}{\rho})$.
+  Here $\phi_i$ is the proximal operator associated with the penalty function $\Phi_i$. For appropriate choices of $\Phi_i$, $\phi_i$ is differentiable and can be computed efficiently. With this in mind, we choose $\Phi_i(\x) = I(\x > 0) + b\left\Vert\x\right\Vert_1$ so that $\phi_i(\x) = \text{ReLU}(\x - \frac{b}{\rho})$.
 \item Finally the dual variable $\bm{\lambda}_i$ is updated by:
   \begin{equation}
     \label{eq:lupdate}
@@ -125,7 +125,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
 \end{algorithm}
 
 The full procedure is detailed in algorithm (\ref{alg:dcsc}).
-As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with CNN layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and got our optimized code $\z_\ell$ for the last layer.
+As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with CNN layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and output our optimized code $\z_\ell$ for the last layer.
 We can interpret the entire pipeline as a deep autoencoder with the ADMM iterations serving as a deep recurrent encoder network.
 With this, we produce our final depth map prediction by:
 \begin{equation}
@@ -153,7 +153,7 @@ Thus the dictionaries $\W_i$ and the bias term $b_i$ which are the parameters fo
 \end{equation}
 Where $\d_\text{gt}^{(n)}$ is the ground truth depth map of the $n_\text{th}$ training example. We allow the ground truth depth map to have missing value by using mask $\M'^{(n)}$ to segment out the invalid pixels in the ground truth depth map. 
 
-In practice we found that due to the sparsity of the training data, the depth maps our method predicted were rather noisy. To fix this issue we included the well known anisotropic total variation loss (TV-L1) when training to encourage smoothness of the predicted depth map. Note that this change has no significant impact on the quantitative error metrics, but produces more visually pleasing outputs. The total loss is then given by summation of the depth reconstruction loss and the TV-L1 smoothness loss, with hyperparameter $\alpha$ to control the weighting for the smoothness penalty:
+In practice we found that due to the sparsity of the training data, the depth maps our method predicted were rather noisy. To fix this issue we included the well known anisotropic total variation loss (TV-L1) when training to encourage smoothness of the predicted depth map. Note that this change has no significant impact on the quantitative error metrics, but produces more visually pleasing outputs. The total loss is then given by summation of the depth reconstruction loss and the TV-L1 smoothness loss, with hyper-parameter $\alpha$ to control the weighting for the smoothness penalty:
 
 \begin{equation}
   \label{eq:9}
