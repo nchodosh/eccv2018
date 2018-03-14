@@ -68,13 +68,13 @@ While the Sparse-to-Dense network is able to achieve good RMSE, it falls behind 
   \begin{minipage}{0.45\textwidth}
     \centering
     \includegraphics[width=\linewidth]{sparsity_plot}
-    \captionof{figure}{Results on the KITTI benchmark for varying levels of input sparsity. The keep probability represents the probability that any particular LiDAR sample is retained.}
+    \captionof{figure}{Results on the KITTI benchmark for varying levels of input sparsity. The keep probability represents the probability that any particular LiDAR sample is retained. We demonstrate robustness to reasonable changes in input sparsity, outperforming both baselines up to a \%50 reduction in the number of input points.}
     \label{fig:sparsity}
   \end{minipage}\hspace{1cm}
   \begin{minipage}{0.45\textwidth}
     \centering
     \includegraphics[width=\linewidth]{trainsize_plot}
-    \caption{Results of selected methods for varying training set sizes.}
+    \caption{Results of selected methods on the KITTI benchmarks for varying training set sizes. Our method performs well with training sizes ranging from 100-86k but still benefits from larger training sizes.}
     \label{fig:trainsize}
   \end{minipage}
 \end{figure*}
