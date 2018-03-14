@@ -9,12 +9,12 @@ Compressed sensing concerns the problem of recovering a signal from a small set 
 %     \z^* = \argmin \Vert \z \Vert_0, ~~\text{s.t.}~\M \W \z = \d_s,
 % \end{equation}
 \begin{equation}
-    \min_{\z} \Vert \M\W\z - \d_s \Vert + \Phi(\z),
+    \min_{\z} \Vert \M\W\z - \d_s \Vert + b\left\Vert\z\right\Vert_0,
     \label{eq:cs}
 \end{equation}
-where $\z$ is the code, $\W\z$ produces our predicted depth map, and $\M$ is a diagonal matrix with 0 and 1s on its diagpnal. It's used to mask out the unmeasured signal, such that the reconstruction error is only applied to the pixels which have been measured; and $\Phi$ can be any regularizer \eg $L_1$ norm to encourage $\z$ to be sparse.
+where $\z$ is the code, $\W\z$ produces our predicted depth map, and $\M$ is a diagonal matrix with 0 and 1s on its diagonal. It's used to mask out the unmeasured portions of the signal, such that the reconstruction error is only applied to the pixels which have been measured.
 
-The key question to apply CS in Eq.~\ref{eq:cs} is: 1) For high dimensional signals such as the depth map, how to design the dictionary such that it encourages uniqueness of the code while still being computationally feasible; 2) How to learn the dictionary to get best reconstruction accuracy. In Sec.~\ref{sec:dccs}, we are going to show that the dictionary can be factorized with the identical structure as performing multi-layer convolution, and we can unrolled the optimization of  Eq.~\ref{eq:cs} as a deep recurrent network. This allows us to learn the dictionary together with other hyper-parameters inside the regularizer $\Phi$ through end-to-end training.
+The key question to apply CS in Eq.~\ref{eq:cs} is: 1) For high dimensional signals such as the depth map, how to design the dictionary such that it encourages uniqueness of the code while still being computationally feasible; 2) How to learn the dictionary to get best reconstruction accuracy. In Sec.~\ref{sec:dccs}, we are going to show that the dictionary can be factored into a structure equivalent to performing multi-layer convolution, and that we can unroll the optimization of  Eq.~\ref{eq:cs} into a network similar to a deep recurrent neural network. This allows us to learn the dictionary together with other hyper-parameters (\eg $b$) through end-to-end training.
 
 \subsection{Deep Component Analysis}
 \label{sec:compr-sens-deep}
@@ -29,9 +29,9 @@ The key question to apply CS in Eq.~\ref{eq:cs} is: 1) For high dimensional sign
 Equation (\ref{eq:cs}) can be generalized to multi-layered sparse coding in which one seeks a very high level sparse representation $\z_{\ell}$ such that $\d = \W_1\W_2\ldots \W_{\ell-1}\z_{\ell}$ and each intermediate product $\z_i = \W_i\W_{i+1}\ldots \W_{\ell-1}\z_{\ell}$ is also sparse. This formulation makes using a large effective dictionary computationally tractable, and when the dictionaries have a convolutional structure it allows for increased receptive fields while keeping the number of parameters manageable. This is further generalized to Deep Component Analysis (DeepCA) by the recent work of Murdock \etal which replaces the $\ell_0$ loss with arbitrary sparsity-encouraging penalties. The DeepCA objective function is stated in \cite{murdock} as:
 \begin{equation}
   \label{eq:2}
-  \min_{\Theta, \{\z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
+  \min_{\{\z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
 \end{equation}
-where the $\Phi_j$ are sparsity regularizer. Previous work has shown that the specific choice of $\Phi(\x) = I(\x > 0) + b\left\Vert\x\right\Vert_1$ yields optimization algorithms very similar to a feed-forward neural network with Relu activation functions. By using the ADMM algorithm to solve equation (\ref{eq:2}), Murdock \etal create Alternating Direction Neural Networks, a generalization of feed forward neural networks which internally solve optimization problems with the form of (\ref{eq:2}). Alternating Direction Neural Networks (ADNNs) perform the optimization in a fully differentiable manner and cast the activation functions of each layer as the proximal operators of penalty function $\Phi_i$ of that layer. This allows for learning the dictionaries $W_i$ and parameters $b$ through gradient descent and back propagation with respect to an arbitrary loss function on the sparse codes. To mirror neural networks, Murdock \etal apply various loss functions to the highest level of codes, which take the place of the output layer in traditional NNs. In the following sections we will show how ADNNs can be adapted to the depth completion problem within the framework of compressed sensing.\\
+where the $\Phi_j$ are sparsity encouraging regularizers. Previous work has shown that the specific choice of $\Phi(\x) = I(\x > 0) + b\left\Vert\x\right\Vert_1$ yields optimization algorithms very similar to a feed-forward neural network with Relu activation functions. By using the ADMM algorithm to solve equation (\ref{eq:2}), Murdock \etal create Alternating Direction Neural Networks, a generalization of feed forward neural networks which internally solve optimization problems with the form of (\ref{eq:2}). Alternating Direction Neural Networks (ADNNs) perform the optimization in a fully differentiable manner and cast the activation functions of each layer as the proximal operators of penalty function $\Phi_i$ of that layer. This allows for learning the dictionaries $W_i$ and parameters $b$ through gradient descent and back propagation with respect to an arbitrary loss function on the sparse codes. To mirror neural networks, Murdock \etal  apply various loss functions to the highest level of codes, which take the place of the output layer in traditional NNs. In the following sections we will show how ADNNs can be adapted to the depth completion problem within the framework of compressed sensing.\\
 
 \section{Deep Convolutional Compressed Sensing}
 \label{sec:dccs}
@@ -79,7 +79,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
     \label{eq:wupdate1}  
   \end{equation}
 
-  This gives a fully differentiable update of $\z_i$ but the matrix inversion is computationally expensive, especially since $W_i$ is not formed explicitly. To deal with this problem we make the approximation that $\W_i$ is a Parseval tight frame~\cite{murdock}, that is we assume $\W_i\W_i^T = \I$. In addition to being common practice in autoencoders with tied weights, this assumption is also made by Murdock \etal and has previously been explicitly enforced in deep neural networks~\cite{moustapha}. We can then use the binomial matrix identity to rewrite the $\z_i$ update as:
+  This gives a fully differentiable update of $\z_i$ but the matrix inversion is computationally expensive, especially since $W_i$ is in practice very large. To deal with this problem we make the approximation that $\W_i$ is a Parseval tight frame~\cite{murdock}, that is we assume $\W_i\W_i^T = \I$. In addition to being common practice in autoencoders with tied weights, this assumption is also made by Murdock \etal and has previously been explicitly enforced in deep neural networks~\cite{moustapha}. We can then use the binomial matrix identity to rewrite the $\z_i$ update as:
   \begin{equation}
     \begin{aligned}
       \z^{[t+1]} &= \tilde{\y}_i^{[t]} + \frac{1}{1 + \rho}\W^T_i\M_{i-1}^T(\M_{i-1}\y^{[t+1]}_{i-1} - \M_{i-1}\W_i\tilde{\y}^{[t]}_i),
@@ -125,8 +125,8 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
 \end{algorithm}
 
 The full procedure is detailed in algorithm (\ref{alg:dcsc}).
-As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with CNeN layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and output our optimized code $\z_\ell$ for the last layer.
-We can the extract our prediction of the depth map by applying the effective dictionary to the high level code $z_{\ell}$ as shown in equation (\ref{eq:recon}). This is different from the standard decoder portion of a deep autoencoder, where the nonlinear activations are applied in between each convolution. Our approach does not require this since the internal optimization of $z_{\ell}$ ensures that the equality constraints between layers are met, which is not the case for conventional autoencoders.
+As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with deep learning layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and output our optimized code $\z_\ell$ for the last layer.
+We can the extract our prediction of the depth map by applying the effective dictionary to the high level code $z_{\ell}$ as shown in equation (\ref{eq:recon}). This is different from the standard decoder portion of a deep autoencoder, where the nonlinear activations are applied in between each convolution. Our approach does not require this since the internal optimization of $z_{\ell}$ enforces equality constraints between layers, which is not the case for conventional autoencoders. We choose to reconstruct the depth from $z_{\ell}$ instead of a lower layer because its elements have the largest receptive field and therefore $z_{\ell}$ will have the fewest number of missing entries.
 \begin{equation}
   \label{eq:recon}
   \d_\text{pred} = \W_1\W_2\ldots \W_{\ell}\z_{\ell}
@@ -137,7 +137,7 @@ We can the extract our prediction of the depth map by applying the effective dic
 \subsection{Learning}
 \label{sec:dictionary-learning}
 
-With unrolling of the ADMM update by $T$ iterations as described above, the entire inference procedure can be thought of as a single differentiable function:
+With the ADMM update unrolled to $T$ iterations as described above, the entire inference procedure can be thought of as a single differentiable function:
 \begin{equation}
     \d_\text{pred} = f_\text{DCCS}^{[T]}(\M, \d_s; \{\W_i, b_i\})
 \end{equation}
@@ -159,6 +159,7 @@ In practice we found that due to the sparsity of the training data, the depth ma
   \L = \L_{reconstruct} + \alpha \L_\text{TV-L1}.
 \end{equation}
 
+We empirically determined that $\alpha = 0.1$ produces the best results.
 % \begin{equation}
 %   \label{eq:9}
 %   \min_{W_i, b_i} \sum_j^{N}\left||M_{j}d_j - M_jd_j^{*}\right|| + \alpha\sum_{x,y} |d_j^*(x+1, y) - d_j^*(x, y)| + |d_j^*(x, y+1) - d_j^*(x, y)|
