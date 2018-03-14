@@ -68,7 +68,7 @@ While the Sparse-to-Dense network is able to achieve good RMSE, it falls behind 
   \begin{minipage}{0.45\textwidth}
     \centering
     \includegraphics[width=\linewidth]{sparsity_plot}
-    \captionof{figure}{Results on the KITTI benchmark for varying levels of input sparsity. The keep probability represents the probability that any particular LiDAR sample is retained. We demonstrate robustness to reasonable changes in input sparsity, outperforming both baselines up to a \%50 reduction in the number of input points.}
+    \captionof{figure}{Results on the KITTI benchmark for varying levels of input sparsity. The keep probability represents the probability that any particular LiDAR sample is retained. We demonstrate robustness to reasonable changes in input sparsity, outperforming both baselines up to a 50\% reduction in the number of input points.}
     \label{fig:sparsity}
   \end{minipage}\hspace{1cm}
   \begin{minipage}{0.45\textwidth}
@@ -91,7 +91,7 @@ Figure (\ref{fig:trainsize}) shows the results of evaluating these models on the
 \begin{figure}
   \centering
   \includegraphics[width=0.7\textwidth]{iter_plot}
-  \caption{Results on the depth completion benchmark for different numbers of ADMM iterations. The total error is shown in blue while the red line shows the error on just those points given as input. The dotted lines show the same metrics but for the SparseConvNet of Uhrig \etal.}
+  \caption{Results on the depth completion benchmark for different numbers of ADMM iterations. The total error is shown in blue while the red line shows the error on just those points given as input. The dotted lines show the same metrics but for the SparseConvNet of Uhrig \etal\cite{uhrig}.}
   \label{fig:iterplot}
 \end{figure}
 

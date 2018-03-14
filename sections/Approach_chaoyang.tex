@@ -29,7 +29,7 @@ The key question to apply CS in Eq.~\ref{eq:cs} is: 1) For high dimensional sign
 Equation (\ref{eq:cs}) can be generalized to multi-layered sparse coding in which one seeks a very high level sparse representation $\z_{\ell}$ such that $\d = \W_1\W_2\ldots \W_{\ell-1}\z_{\ell}$ and each intermediate product $\z_i = \W_i\W_{i+1}\ldots \W_{\ell-1}\z_{\ell}$ is also sparse. This formulation makes using a large effective dictionary computationally tractable, and when the dictionaries have a convolutional structure it allows for increased receptive fields while keeping the number of parameters manageable. This is further generalized to Deep Component Analysis (DeepCA) by the recent work of Murdock \etal which replaces the $\ell_0$ loss with arbitrary sparsity-encouraging penalties. The DeepCA objective function is stated in \cite{murdock} as:
 \begin{equation}
   \label{eq:2}
-  \min_{\{\z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
+  \min_{\{\z_i\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i),
 \end{equation}
 where the $\Phi_j$ are sparsity encouraging regularizers. Previous work has shown that the specific choice of $\Phi(\x) = I(\x > 0) + b\left\Vert\x\right\Vert_1$ yields optimization algorithms very similar to a feed-forward neural network with Relu activation functions. By using the ADMM algorithm to solve equation (\ref{eq:2}), Murdock \etal create Alternating Direction Neural Networks, a generalization of feed forward neural networks which internally solve optimization problems with the form of (\ref{eq:2}). Alternating Direction Neural Networks (ADNNs) perform the optimization in a fully differentiable manner and cast the activation functions of each layer as the proximal operators of penalty function $\Phi_i$ of that layer. This allows for learning the dictionaries $W_i$ and parameters $b$ through gradient descent and back propagation with respect to an arbitrary loss function on the sparse codes. To mirror neural networks, Murdock \etal  apply various loss functions to the highest level of codes, which take the place of the output layer in traditional NNs. In the following sections we will show how ADNNs can be adapted to the depth completion problem within the framework of compressed sensing.\\
 
@@ -45,13 +45,13 @@ where the $\Phi_j$ are sparsity encouraging regularizers. Previous work has show
 
 Directly applying compressed sensing to the DeepCA objective gives
 \begin{equation}
-  \min_{\{\z_i\}} \frac{1}{2} \left\Vert \d_s - \M\W_1\z_1 \right\Vert_2^2  +  \sum_{i=2}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \sum_{i=1}^{\ell}\Phi_i(\z_i) 
+  \min_{\{\z_i\}} \frac{1}{2} \left\Vert \d_s - \M\W_1\z_1 \right\Vert_2^2  +  \sum_{i=2}^{\ell} \frac{1}{2} \left\Vert \z_{i-1} - \W_i\z_i\right\Vert_2^2 + \sum_{i=1}^{\ell}\Phi_i(\z_i), 
   \label{eq:dccs_no_mask}
 \end{equation}
 where $\d_s$ is the input sparse depth map. However, if we take the $\W_i$ to have a convolutional structure then an element $\z_1$ will not be recovered if its spatial support contains no valid depth samples. Thus, extracting the higher level codes is itself a missing data problem and can be written the same way. This gives the full Deep Convolutional Compressed Sensing objective:
 \begin{equation}
   \label{eq:dccs}
-  \min_{\{\z_i \vert i>0\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\z_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i)
+  \min_{\{\z_i \vert i>0\}} \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\z_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\z_i).
 \end{equation}
 Here, to simplify notation, we merge the depth reconstruction cost (left term in Eq.~\ref{eq:dccs_no_mask}) and the reconstruction cost of the codes together, with $\z_0 = \d_s$ and $\M_0$ denotes the mask $\M$ used in (\ref{eq:dccs_no_mask}) . Each $\M_i$ is a mask encoding which elements of $\z_i$ had any valid inputs in their spatial support. In practice computing $\M_i$ is done with a maxpooling operation with the same stride and kernel size as the convolution represented by $\W_{i+1}^T$.\\
 
@@ -59,13 +59,13 @@ We solve (\ref{eq:dccs}) using the ADMM algorithm, which introduces auxiliary va
 \begin{equation}
 \begin{aligned}
 \min_{\{\y_i, \z_i \vert i>0\}} & \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i)\\
-\text{s.t.~~} & \z_i = \y_i
+\text{s.t.~~} & \z_i = \y_i.
 \end{aligned}
 \label{eq:admm_obj}
 \end{equation}
 Here, we again refer the input sparse depth $\d_s$ as $\y_0$. With this, the augmented Lagrangian of (\ref{eq:admm_obj}) with dual variables $\bm{\lambda}$ and a quadratic penalty weight $\rho$ is:
 \begin{equation}
-  L_\rho(\z, \y, \bm{\lambda}) = \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i) + \bm{\lambda}^T_i(\z_i - \y_i) + \frac{\rho}{2}\left\Vert\z_i - \y_i\right\Vert_2^2
+  L_\rho(\z, \y, \bm{\lambda}) = \sum_{i=1}^{\ell} \frac{1}{2} \left\Vert \M_{i-1}\y_{i-1} - \M_{i-1}\W_i\z_i\right\Vert_2^2 + \Phi_i(\y_i) + \bm{\lambda}^T_i(\z_i - \y_i) + \frac{\rho}{2}\left\Vert\z_i - \y_i\right\Vert_2^2.
 \end{equation}
 The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while keeping all others fixed. Following Murdock \etal we will incrementally update each layer instead of first solving for all $\z_i$ followed by all $\y_i$. They show this order leads to faster convergence. The ADMM updates for each variable are as follows:
 \begin{enumerate}
@@ -74,7 +74,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
   \begin{equation}
     \begin{aligned}
       \z^{[t+1]}_i & = \argmin_{\z_i} L_\rho(\z_i, \y^{[t+1]}_{i-1}, \y^{[t]}_i, \bm{\lambda}_i^{[t]})\\
-      &= (\W_i^T\M_{i-1}^T\M_{i-1}\W_i + \rho \I)^{-1}(\W_{i}^T\M_{i-1}^T\M_{i-1}\W\y^{[t+1]}_{i-1} + \rho \y^{[t]}_{i} - \bm{\lambda}^{[t]})
+      &= (\W_i^T\M_{i-1}^T\M_{i-1}\W_i + \rho \I)^{-1}(\W_{i}^T\M_{i-1}^T\M_{i-1}\W\y^{[t+1]}_{i-1} + \rho \y^{[t]}_{i} - \bm{\lambda}^{[t]}).
     \end{aligned}
     \label{eq:wupdate1}  
   \end{equation}
@@ -92,7 +92,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
     \begin{aligned}
       \y_i^{[t+1]} & = \argmin_{\y_i} L_\rho(\z^{[t+1]}_i, \z^{[t]}_{i+1}, \y_i, \bm{\lambda}_i^{[t]})\\
       &= \phi_i\left(\frac{1}{1+\rho}\W_{i+1}\z^{[t]}_{i+1} + \frac{\rho}{1+\rho}(\z^{[t+1]}_i + \frac{\bm{\lambda}_i^{[t]}}{\rho})\right)\\
-      \y_{\ell} &= \phi_i\left(\z_i^{[t]} + \frac{\bm{\lambda}_i^{[t]}}{\rho}\right)
+      \y_{\ell} &= \phi_i\left(\z_i^{[t]} + \frac{\bm{\lambda}_i^{[t]}}{\rho}\right).
     \end{aligned}\label{eq:yupdate}
   \end{equation}
 
@@ -100,7 +100,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
 \item Finally the dual variable $\bm{\lambda}_i$ is updated by:
   \begin{equation}
     \label{eq:lupdate}
-    \bm{\lambda}_i^{[t+1]} = \bm{\lambda}_i^{[t]} + \rho(\z_i^{[t+1]} - \y_i^{[t+1]})
+    \bm{\lambda}_i^{[t+1]} = \bm{\lambda}_i^{[t]} + \rho(\z_i^{[t+1]} - \y_i^{[t+1]}).
   \end{equation}
 \end{enumerate}
 \begin{algorithm}
@@ -126,7 +126,7 @@ The ADMM algorithm then minimizes $L_\rho$ over each variable in turn, while kee
 
 The full procedure is detailed in algorithm (\ref{alg:dcsc}).
 As shown in above, all the operations used in the ADMM iteration are differentiable, and can be implemented with deep learning layers \eg convolution, convolution transpose, and ReLU. We unroll the ADMM iteration for a constant number of iterations $T$, and output our optimized code $\z_\ell$ for the last layer.
-We can the extract our prediction of the depth map by applying the effective dictionary to the high level code $z_{\ell}$ as shown in equation (\ref{eq:recon}). This is different from the standard decoder portion of a deep autoencoder, where the nonlinear activations are applied in between each convolution. Our approach does not require this since the internal optimization of $z_{\ell}$ enforces equality constraints between layers, which is not the case for conventional autoencoders. We choose to reconstruct the depth from $z_{\ell}$ instead of a lower layer because its elements have the largest receptive field and therefore $z_{\ell}$ will have the fewest number of missing entries.
+We can then extract our prediction of the depth map by applying the effective dictionary to the high level code $z_{\ell}$ as shown in equation (\ref{eq:recon}). This is different from the standard decoder portion of a deep autoencoder, where the nonlinear activations are applied in between each convolution. Our approach does not require this since the internal optimization of $z_{\ell}$ enforces equality constraints between layers, which is not the case for conventional autoencoders. We choose to reconstruct the depth from $z_{\ell}$ instead of a lower layer because its elements have the largest receptive field and therefore $z_{\ell}$ will have the fewest number of missing entries.
 \begin{equation}
   \label{eq:recon}
   \d_\text{pred} = \W_1\W_2\ldots \W_{\ell}\z_{\ell}
